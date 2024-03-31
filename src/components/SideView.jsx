@@ -10,7 +10,6 @@ export default function SideView() {
   let [data, SetData] = useRecoilState(DataFromLocal);
   let objects = useRecoilValue(processed);
   let [search, SetSearch] = useState("");
-  let nav = useNavigate();
   let [id, setId] = useSearchParams();
   const handleDelete = (id) => {
     // Remove item from localStorage

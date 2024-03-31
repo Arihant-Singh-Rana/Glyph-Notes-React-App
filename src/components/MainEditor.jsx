@@ -1,4 +1,4 @@
-import React, { useState} from "react";
+import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DataFromLocal from "../Storage/DataFromLocal";
 import {
@@ -31,13 +31,16 @@ import { IconContext } from "react-icons";
 import { useRecoilState } from "recoil";
 
 export default function MainEditor() {
+  // Initialize hooks
   let nav = useNavigate();
   let [q, setQ] = useSearchParams();
   let [state, setState] = useRecoilState(DataFromLocal);
   const [showFontStyles, setShowFontStyles] = useState(false);
+  // Customize document extension
   const CustomDocument = Document.extend({
     content: "heading block*",
   });
+  // Define extensions for the editor
   const extensions = [
     StarterKit.configure({
       document: false,
@@ -57,11 +60,13 @@ export default function MainEditor() {
       },
     }),
   ];
+  // Get pre-added content from local storage
   let preaddedContent =
     localStorage.getItem(q.get("id")) === null
-      ? ''
+      ? ""
       : JSON.parse(localStorage.getItem(q.get("id"))).content;
   const content = `${preaddedContent}`;
+  // Initialize editor with extensions and content
   const editor = useEditor({
     extensions,
     content,
@@ -69,15 +74,27 @@ export default function MainEditor() {
   if (!editor) {
     return null;
   }
+  // Handle save functionality
   function handleSave() {
+    // Get HTML content from the editor
     const data = editor.getHTML();
     const parser = new DOMParser();
     const doc = parser.parseFromString(data, "text/html");
-    const firstHeading = doc.querySelector("h1").textContent;
-    if(firstHeading === null || firstHeading === ""){
+    let firstHeading = doc.body.firstElementChild;
+
+    // Check if the first child exists and is a heading tag
+    if (firstHeading && firstHeading.tagName.toLowerCase().startsWith("h")) {
+      // Return the text content of the first heading tag
+      firstHeading = firstHeading.textContent.trim();
+    } else {
+      // Show alert message if the first child is not a heading tag
+      firstHeading = null;
+    }
+    if (firstHeading === null || firstHeading === "") {
       alert("Please enter a heading for this note before saving it!!");
       return null;
     }
+    // Create meta data for the note
     let meta = Date.now();
     const dateObject = new Date(meta);
     const id = `${firstHeading}_${meta}`;
@@ -93,12 +110,14 @@ export default function MainEditor() {
       }-${dateObject.getFullYear()}`,
       time: `${dateObject.getHours()}:${dateObject.getMinutes()}:${dateObject.getSeconds()}`,
     };
+    // Save data to local storage
     localStorage.setItem(
       localStorage.getItem(q.get("id")) !== null
         ? q.get("id")
         : `${firstHeading}_${meta}`,
       JSON.stringify(sendData)
     );
+    // Update state with saved data
     setState(() => ({
       state: "read",
       data:
@@ -106,6 +125,7 @@ export default function MainEditor() {
           ? [...state.data]
           : [...state.data, `${firstHeading}_${meta}`],
     }));
+    // Navigate to show saved note
     nav(
       `/ShowSaved?id=${
         localStorage.getItem(q.get("id")) !== null
@@ -117,9 +137,12 @@ export default function MainEditor() {
 
   return (
     <div className="Editor_Parent">
+      {/* Toolbar section */}
       <div className="tools">
+        {/* Icon context provider for icon size */}
         <IconContext.Provider value={{ size: "1.5rem" }}>
           <div>
+            {/* Color picker */}
             <FaEyeDropper style={{ color: " #cbcbcb", marginLeft: "1vw" }} />
             <input
               type="color"
@@ -129,6 +152,7 @@ export default function MainEditor() {
               value={editor.getAttributes("textStyle").color}
               data-testid="setColor"
             />
+            {/* Formatting buttons */}
             <button
               onClick={() => editor.chain().focus().toggleBold().run()}
               className={editor.isActive("bold") ? "is-active" : "btns"}
@@ -172,6 +196,7 @@ export default function MainEditor() {
               <FaFonticons />
             </button>
           </div>
+          {/* Undo/Redo and Save buttons */}
           <div style={{ display: "flex" }}>
             <button
               className={editor.can().undo() ? "is-active" : "btns"}
@@ -203,11 +228,14 @@ export default function MainEditor() {
           </div>
           {showFontStyles && (
             <div>
+              {/* Font style menu */}
               <BubbleMenu
                 className="Float"
                 editor={editor}
                 tippyOptions={{ duration: 100 }}
               >
+                {/* Font family selection buttons */}
+                {/* Each button sets a specific font family */}
                 <button
                   className={
                     editor.isActive("textStyle", { fontFamily: "Arial" })
@@ -374,11 +402,14 @@ export default function MainEditor() {
             </div>
           )}
           <div>
+            {/* Floating menu for heading styles */}
             <FloatingMenu
               editor={editor}
               tippyOptions={{ duration: 100 }}
               className="Float"
             >
+              {/* Buttons to set different heading levels */}
+              {/* Each button sets a specific heading level */}
               <button
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 1 }).run()
@@ -451,6 +482,8 @@ export default function MainEditor() {
               >
                 h6
               </button>
+              {/* Font family selection buttons */}
+              {/* Each button sets a specific font family */}
               <button
                 className={
                   editor.isActive("textStyle", { fontFamily: "Arial" })
@@ -613,6 +646,7 @@ export default function MainEditor() {
           </div>
         </IconContext.Provider>
       </div>
+      {/* Editor content */}
       <div className="editor_container">
         <EditorContent editor={editor} />
       </div>
